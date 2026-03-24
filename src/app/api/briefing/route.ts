@@ -4,11 +4,20 @@ import { getUserFromToken } from '@/lib/supabase/auth-helper';
 import { generateDailyBriefing } from '@/lib/ai/briefing';
 import { generateCompletionStream, streamToSSEResponse } from '@/lib/ai/client';
 import { BRIEFING_SYSTEM_PROMPT, buildAcademicContext } from '@/lib/ai/prompts';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 export async function GET(request: Request) {
   const user = await getUserFromToken(request);
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { allowed, resetIn } = checkRateLimit(user.id, 'briefing', 10, 60000);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: `Rate limited. Try again in ${Math.ceil(resetIn / 1000)}s` },
+      { status: 429 }
+    );
   }
 
   const supabase = createAdminClient();

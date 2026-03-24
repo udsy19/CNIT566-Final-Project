@@ -2,15 +2,18 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Sun, Moon, Monitor, Download, Trash2 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import TopBar from '@/components/layout/TopBar';
 import type { User } from '@/types';
 
 type AuthStatus = 'idle' | 'logging_in' | 'duo_pending' | 'duo_code' | 'completing' | 'completed' | 'error';
+type Theme = 'system' | 'light' | 'dark';
 
 export default function SettingsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [theme, setTheme] = useState<Theme>('system');
 
   // Brightspace login state
   const [username, setUsername] = useState('');
@@ -22,6 +25,8 @@ export default function SettingsPage() {
 
   useEffect(() => {
     loadUser();
+    const saved = localStorage.getItem('beacon-theme') as Theme | null;
+    if (saved) setTheme(saved);
   }, []);
 
   const pollStatus = useCallback(async () => {
@@ -35,7 +40,6 @@ export default function SettingsPage() {
       } else if (data.status === 'completed') {
         setAuthStatus('completed');
         setPolling(false);
-        // Reload to show connected state
         window.location.reload();
       } else if (data.status === 'error') {
         setAuthError(data.error || 'Authentication failed');
@@ -98,9 +102,8 @@ export default function SettingsPage() {
         setAuthStatus(data?.status || 'duo_pending');
       }
 
-      // Start polling
       setPolling(true);
-    } catch (err) {
+    } catch {
       setAuthError('Failed to start authentication');
       setAuthStatus('error');
     }
@@ -112,6 +115,49 @@ export default function SettingsPage() {
       await apiFetch('/api/auth/brightspace-disconnect', { method: 'POST' });
       loadUser();
     } catch {}
+  };
+
+  const handleThemeChange = (t: Theme) => {
+    setTheme(t);
+    localStorage.setItem('beacon-theme', t);
+    const root = document.documentElement;
+    root.classList.remove('light', 'dark');
+    if (t !== 'system') root.classList.add(t);
+  };
+
+  const handleClearChat = async () => {
+    if (!confirm('Clear all chat history? This cannot be undone.')) return;
+    try {
+      await apiFetch('/api/ask/history', { method: 'DELETE' });
+    } catch {}
+  };
+
+  const handleExportData = async () => {
+    try {
+      const [coursesRes, assignmentsRes] = await Promise.all([
+        apiFetch('/api/courses'),
+        apiFetch('/api/assignments?upcoming=false'),
+      ]);
+
+      const courses = coursesRes.ok ? (await coursesRes.json()).data || [] : [];
+      const assignments = assignmentsRes.ok ? (await assignmentsRes.json()).data || [] : [];
+
+      const data = {
+        exported_at: new Date().toISOString(),
+        courses,
+        assignments,
+      };
+
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `beacon-export-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export failed:', err);
+    }
   };
 
   if (loading) {
@@ -147,7 +193,7 @@ export default function SettingsPage() {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <motion.div
-                  className="w-2 h-2 rounded-full bg-emerald-500"
+                  className="w-2 h-2 rounded-full bg-success"
                   animate={{ scale: [1, 1.2, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 />
@@ -264,11 +310,41 @@ export default function SettingsPage() {
           )}
         </motion.div>
 
-        {/* Account */}
+        {/* Theme preferences */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
+          className="p-6 rounded-2xl border border-border bg-background"
+        >
+          <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-4">Appearance</p>
+          <div className="flex gap-2">
+            {([
+              { key: 'system' as Theme, icon: Monitor, label: 'System' },
+              { key: 'light' as Theme, icon: Sun, label: 'Light' },
+              { key: 'dark' as Theme, icon: Moon, label: 'Dark' },
+            ]).map(({ key, icon: Icon, label }) => (
+              <button
+                key={key}
+                onClick={() => handleThemeChange(key)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm transition-all ${
+                  theme === key
+                    ? 'bg-foreground text-background font-medium'
+                    : 'border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {label}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Account */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
           className="p-6 rounded-2xl border border-border bg-background"
         >
           <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-4">Account</p>
@@ -276,6 +352,32 @@ export default function SettingsPage() {
             <span className="text-muted-foreground">Email: </span>
             <span className="font-medium">{user?.email || 'Unknown'}</span>
           </p>
+        </motion.div>
+
+        {/* Data management */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="p-6 rounded-2xl border border-border bg-background"
+        >
+          <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-4">Data</p>
+          <div className="space-y-3">
+            <button
+              onClick={handleExportData}
+              className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors w-full"
+            >
+              <Download className="w-4 h-4" />
+              Export all data (JSON)
+            </button>
+            <button
+              onClick={handleClearChat}
+              className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-destructive hover:bg-muted/50 transition-colors w-full"
+            >
+              <Trash2 className="w-4 h-4" />
+              Clear chat history
+            </button>
+          </div>
         </motion.div>
       </div>
     </>

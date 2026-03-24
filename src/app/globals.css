@@ -19,6 +19,11 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-grade-a: var(--grade-a);
+  --color-grade-b: var(--grade-b);
+  --color-grade-c: var(--grade-c);
+  --color-grade-d: var(--grade-d);
+  --color-success: var(--success);
 }
 
 :root {
@@ -41,10 +46,17 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
+  /* Grade semantic colors */
+  --grade-a: oklch(0.723 0.191 149.58);
+  --grade-b: oklch(0.795 0.184 86.047);
+  --grade-c: oklch(0.705 0.213 47.604);
+  --grade-d: oklch(0.637 0.237 25.331);
+  --success: oklch(0.723 0.191 149.58);
 }
 
+/* Dark mode via prefers-color-scheme (system default) */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not(.light) {
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.205 0 0);
@@ -63,7 +75,39 @@
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.556 0 0);
+    --grade-a: oklch(0.723 0.191 149.58);
+    --grade-b: oklch(0.795 0.184 86.047);
+    --grade-c: oklch(0.705 0.213 47.604);
+    --grade-d: oklch(0.637 0.237 25.331);
+    --success: oklch(0.723 0.191 149.58);
   }
+}
+
+/* Dark mode via class (explicit toggle) */
+:root.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --grade-a: oklch(0.723 0.191 149.58);
+  --grade-b: oklch(0.795 0.184 86.047);
+  --grade-c: oklch(0.705 0.213 47.604);
+  --grade-d: oklch(0.637 0.237 25.331);
+  --success: oklch(0.723 0.191 149.58);
 }
 
 * {
@@ -73,5 +117,125 @@
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+}
+
+/* Chat markdown styles */
+.chat-markdown {
+  font-size: 0.875rem;
+  line-height: 1.625;
+  color: var(--foreground);
+}
+.chat-markdown p {
+  margin-bottom: 0.5rem;
+}
+.chat-markdown p:last-child {
+  margin-bottom: 0;
+}
+.chat-markdown strong {
+  font-weight: 600;
+  color: var(--foreground);
+}
+.chat-markdown h1,
+.chat-markdown h2,
+.chat-markdown h3 {
+  font-weight: 500;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  color: var(--foreground);
+}
+.chat-markdown h1 {
+  font-size: 1.125rem;
+}
+.chat-markdown h2 {
+  font-size: 1rem;
+}
+.chat-markdown h3 {
+  font-size: 0.875rem;
+}
+.chat-markdown ul,
+.chat-markdown ol {
+  padding-left: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+.chat-markdown li {
+  margin-bottom: 0.25rem;
+}
+.chat-markdown li::marker {
+  color: var(--muted-foreground);
+}
+.chat-markdown code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  font-size: 0.8em;
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  background: var(--muted);
+}
+.chat-markdown pre {
+  background: var(--muted);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  margin: 0.5rem 0;
+}
+.chat-markdown pre code {
+  background: transparent;
+  padding: 0;
+}
+.chat-markdown table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 0.75rem 0;
+  font-size: 0.8125rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+.chat-markdown thead {
+  background: var(--muted);
+}
+.chat-markdown th {
+  text-align: left;
+  padding: 0.625rem 1rem;
+  font-weight: 500;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  border-bottom: 1px solid var(--border);
+}
+.chat-markdown td {
+  padding: 0.625rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.chat-markdown tr:last-child td {
+  border-bottom: none;
+}
+.chat-markdown tbody tr:hover {
+  background: var(--muted);
+  transition: background 0.15s;
+}
+.chat-markdown blockquote {
+  border-left: 2px solid var(--border);
+  padding-left: 0.75rem;
+  margin: 0.5rem 0;
+  color: var(--muted-foreground);
+}
+.chat-markdown hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0.75rem 0;
+}
+.chat-markdown a {
+  color: var(--foreground);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }

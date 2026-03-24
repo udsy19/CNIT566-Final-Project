@@ -38,11 +38,12 @@ export async function handleNaturalLanguageQuery(
     announcements,
   });
 
-  // Get recent chat history for context
+  // Get recent GLOBAL chat history for context (exclude course-scoped messages)
   const { data: recentMessages } = await supabase
     .from('chat_messages')
     .select('role, content')
     .eq('user_id', userId)
+    .is('course_id', null)
     .order('created_at', { ascending: false })
     .limit(10);
 

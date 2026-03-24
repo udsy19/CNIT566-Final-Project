@@ -13,6 +13,7 @@ export async function GET(request: Request) {
     .from('chat_messages')
     .select('*')
     .eq('user_id', user.id)
+    .is('course_id', null)
     .order('created_at', { ascending: true })
     .limit(50);
 

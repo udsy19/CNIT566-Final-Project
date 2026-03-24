@@ -4,11 +4,20 @@ import { getUserFromToken } from '@/lib/supabase/auth-helper';
 import { handleNaturalLanguageQuery } from '@/lib/ai/nlq';
 import { generateCompletionWithHistoryStream, streamToSSEResponse } from '@/lib/ai/client';
 import { NLQ_SYSTEM_PROMPT, buildAcademicContext } from '@/lib/ai/prompts';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 export async function POST(request: NextRequest) {
   const user = await getUserFromToken(request);
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { allowed, resetIn } = checkRateLimit(user.id, 'ask', 20, 60000);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: `Rate limited. Try again in ${Math.ceil(resetIn / 1000)}s` },
+      { status: 429 }
+    );
   }
 
   const supabase = createAdminClient();
@@ -19,9 +28,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Question is required' }, { status: 400 });
   }
 
-  // Save user message
+  // Save user message (global = no course_id)
   await supabase.from('chat_messages').insert({
     user_id: user.id,
+    course_id: null,
     role: 'user',
     content: question,
   });
@@ -58,11 +68,12 @@ export async function POST(request: NextRequest) {
       announcements,
     });
 
-    // Get chat history
+    // Get ONLY global chat history (no course_id)
     const { data: recentMessages } = await supabase
       .from('chat_messages')
       .select('role, content')
       .eq('user_id', user.id)
+      .is('course_id', null)
       .order('created_at', { ascending: false })
       .limit(10);
 
@@ -85,6 +96,7 @@ export async function POST(request: NextRequest) {
       // Save assistant message after stream completes
       await supabase.from('chat_messages').insert({
         user_id: user!.id,
+        course_id: null,
         role: 'assistant',
         content: fullResponse,
       });
@@ -98,6 +110,7 @@ export async function POST(request: NextRequest) {
     const answer = await handleNaturalLanguageQuery(user.id, question, supabase);
     await supabase.from('chat_messages').insert({
       user_id: user.id,
+      course_id: null,
       role: 'assistant',
       content: answer,
     });

@@ -2,10 +2,19 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import ReactMarkdown from 'react-markdown';
+import ChatMarkdown from '@/components/ui/ChatMarkdown';
 import { apiFetch } from '@/lib/api';
 import TopBar from '@/components/layout/TopBar';
 import type { ChatMessage } from '@/types';
+
+const SUGGESTIONS = [
+  'What assignments are due this week?',
+  'Give me a grade summary',
+  'Help me make a study plan',
+  'What quizzes are coming up?',
+  'How am I doing overall?',
+  'Summarize recent announcements',
+];
 
 export default function AskPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -34,19 +43,18 @@ export default function AskPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || loading) return;
+  const sendQuestion = async (question: string) => {
+    if (!question.trim() || loading) return;
 
-    const question = input.trim();
     setInput('');
     setLoading(true);
 
     const userMsg: ChatMessage = {
       id: crypto.randomUUID(),
       user_id: '',
+      course_id: null,
       role: 'user',
-      content: question,
+      content: question.trim(),
       created_at: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, userMsg]);
@@ -55,6 +63,7 @@ export default function AskPage() {
     const assistantMsg: ChatMessage = {
       id: assistantId,
       user_id: '',
+      course_id: null,
       role: 'assistant',
       content: '',
       created_at: new Date().toISOString(),
@@ -66,7 +75,7 @@ export default function AskPage() {
       const res = await apiFetch('/api/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, stream: true }),
+        body: JSON.stringify({ question: question.trim(), stream: true }),
       });
 
       if (!res.ok) {
@@ -123,6 +132,11 @@ export default function AskPage() {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    sendQuestion(input);
+  };
+
   return (
     <>
       <TopBar title="Ask Beacon" />
@@ -133,15 +147,32 @@ export default function AskPage() {
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-center"
+                className="text-center max-w-md"
               >
-                <p className="text-sm font-mono text-muted-foreground mb-4">[ask beacon]</p>
-                <h2 className="text-2xl md:text-3xl font-light tracking-tight mb-3">
+                <div className="w-14 h-14 rounded-2xl bg-foreground/5 flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-7 h-7 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
+                  </svg>
+                </div>
+                <p className="text-sm font-mono text-muted-foreground mb-3">[ask beacon]</p>
+                <h2 className="text-2xl md:text-3xl font-light tracking-tight mb-6">
                   What do you need to know?
                 </h2>
-                <p className="text-sm text-muted-foreground">
-                  Try: &quot;What assignments are due this week?&quot;
-                </p>
+
+                {/* Prompt suggestion pills */}
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {SUGGESTIONS.map((s) => (
+                    <motion.button
+                      key={s}
+                      onClick={() => sendQuestion(s)}
+                      className="px-4 py-2 rounded-full border border-border text-xs text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-all"
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                    >
+                      {s}
+                    </motion.button>
+                  ))}
+                </div>
               </motion.div>
             </div>
           )}
@@ -149,21 +180,19 @@ export default function AskPage() {
             {messages.map((msg) => (
               <motion.div
                 key={msg.id}
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={msg.role === 'user' ? 'flex justify-end' : ''}
               >
-                <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                    msg.role === 'user'
-                      ? 'bg-foreground text-background'
-                      : 'bg-muted border border-border/50'
-                  }`}
-                >
-                  {msg.role === 'assistant' ? (
-                    msg.content ? (
-                      <div className="prose prose-sm max-w-none text-foreground [&_strong]:text-foreground leading-relaxed">
-                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                {msg.role === 'user' ? (
+                  <div className="max-w-[75%] rounded-2xl px-4 py-2.5 bg-foreground text-background">
+                    <p className="text-sm">{msg.content}</p>
+                  </div>
+                ) : (
+                  <div className="w-full">
+                    {msg.content ? (
+                      <div>
+                        <ChatMarkdown content={msg.content} />
                         {streaming && messages[messages.length - 1]?.id === msg.id && (
                           <motion.span
                             animate={{ opacity: [1, 0] }}
@@ -173,19 +202,17 @@ export default function AskPage() {
                         )}
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2 py-2">
                         <motion.div
                           animate={{ rotate: 360 }}
                           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                          className="w-3.5 h-3.5 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full"
+                          className="w-4 h-4 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full"
                         />
-                        Thinking...
+                        <span className="text-sm text-muted-foreground">Thinking...</span>
                       </div>
-                    )
-                  ) : (
-                    <p className="text-sm">{msg.content}</p>
-                  )}
-                </div>
+                    )}
+                  </div>
+                )}
               </motion.div>
             ))}
           </AnimatePresence>

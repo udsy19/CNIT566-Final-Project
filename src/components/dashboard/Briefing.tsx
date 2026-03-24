@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { apiFetch } from '@/lib/api';
-import ReactMarkdown from 'react-markdown';
+import ChatMarkdown from '@/components/ui/ChatMarkdown';
 import type { Briefing as BriefingType } from '@/types';
 
 interface BriefingProps {
@@ -110,8 +110,8 @@ export default function Briefing({ briefing: initialBriefing }: BriefingProps) {
           <div className="h-3 bg-muted rounded-full w-5/6 animate-pulse" />
         </div>
       ) : displayContent ? (
-        <div className="prose prose-sm max-w-none text-muted-foreground [&_strong]:text-foreground leading-relaxed">
-          <ReactMarkdown>{displayContent}</ReactMarkdown>
+        <div>
+          <ChatMarkdown content={displayContent} />
           {streaming && (
             <motion.span
               animate={{ opacity: [1, 0] }}
