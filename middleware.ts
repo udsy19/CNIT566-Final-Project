@@ -1,58 +1,40 @@
 // Beacon · CNIT 566 Final Project
 // Author: Udaya Tejas
 
-import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
+// NOTE: we intentionally do NOT import the session module here, because
+// Edge-runtime middleware cannot use `better-sqlite3` (native binding).
+// Instead, we treat the presence of the session cookie as a weak signal
+// of "logged in" and let the actual validation happen inside server
+// components / API routes (which run in the Node runtime).
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
+const SESSION_COOKIE = 'beacon_session';
+const PROTECTED_PATHS = ['/dashboard', '/course', '/ask', '/settings', '/calendar'];
 
-  const { data: { user } } = await supabase.auth.getUser();
+export function middleware(request: NextRequest) {
+  const hasSessionCookie = Boolean(request.cookies.get(SESSION_COOKIE)?.value);
 
-  // Don't redirect API routes — just refresh their session
+  // Don't redirect API routes — they validate the session server-side.
   if (request.nextUrl.pathname.startsWith('/api/')) {
-    return supabaseResponse;
+    return NextResponse.next();
   }
 
-  const protectedPaths = ['/dashboard', '/course', '/ask', '/settings'];
-  const isProtected = protectedPaths.some(path =>
-    request.nextUrl.pathname.startsWith(path)
-  );
+  const isProtected = PROTECTED_PATHS.some((p) => request.nextUrl.pathname.startsWith(p));
 
-  if (isProtected && !user) {
+  if (isProtected && !hasSessionCookie) {
     const url = request.nextUrl.clone();
     url.pathname = '/';
     return NextResponse.redirect(url);
   }
 
-  if (request.nextUrl.pathname === '/' && user) {
+  if (request.nextUrl.pathname === '/' && hasSessionCookie) {
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';
     return NextResponse.redirect(url);
   }
 
-  return supabaseResponse;
+  return NextResponse.next();
 }
 
 export const config = {

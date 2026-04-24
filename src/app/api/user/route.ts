@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     .eq('id', user.id)
     .single();
 
-  if (error && error.code !== 'PGRST116') {
+  if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

@@ -3,9 +3,9 @@
 
 import { generateCompletion } from './client';
 import { BRIEFING_SYSTEM_PROMPT, buildAcademicContext } from './prompts';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { ShimClient } from '@/lib/supabase/shim';
 
-export async function generateDailyBriefing(userId: string, supabase: SupabaseClient): Promise<string> {
+export async function generateDailyBriefing(userId: string, supabase: ShimClient): Promise<string> {
   // Gather academic data
   const [coursesRes, assignmentsRes, announcementsRes] = await Promise.all([
     supabase.from('courses').select('name, code, current_grade').eq('user_id', userId).eq('is_active', true),

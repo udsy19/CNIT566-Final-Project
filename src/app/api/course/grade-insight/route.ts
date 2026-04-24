@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Course not found' }, { status: 404 });
   }
 
-  const graded = (assignmentsRes.data || []).filter(a => a.points_denominator > 0);
+  const graded = (assignmentsRes.data || []).filter((a: { points_denominator: number | null }) => (a.points_denominator ?? 0) > 0);
   if (graded.length === 0) {
     return NextResponse.json({ error: 'No graded assignments yet' }, { status: 404 });
   }

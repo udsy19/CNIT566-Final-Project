@@ -8,7 +8,7 @@
 import { randomBytes } from 'node:crypto';
 import { cookies } from 'next/headers';
 import { eq, lt } from 'drizzle-orm';
-import { db } from '@/lib/db/client';
+import { db, ensureReady } from '@/lib/db/client';
 import { sessions, users } from '@/lib/db/schema';
 import type { User } from '@/lib/db/schema-types';
 
@@ -21,6 +21,7 @@ function generateSessionId(): string {
 }
 
 export async function createSession(userId: string): Promise<{ id: string; expiresAt: Date }> {
+  ensureReady();
   const id = generateSessionId();
   const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
   db.insert(sessions).values({ id, user_id: userId, expires_at: expiresAt }).run();
@@ -62,6 +63,7 @@ export async function validateSession(
   sessionId: string | null,
 ): Promise<{ user: User; sessionId: string } | null> {
   if (!sessionId) return null;
+  ensureReady();
 
   const row = db
     .select({
@@ -92,15 +94,18 @@ export async function validateSession(
 }
 
 export async function invalidateSession(sessionId: string) {
+  ensureReady();
   db.delete(sessions).where(eq(sessions.id, sessionId)).run();
 }
 
 export async function invalidateAllUserSessions(userId: string) {
+  ensureReady();
   db.delete(sessions).where(eq(sessions.user_id, userId)).run();
 }
 
 /** Opportunistic cleanup — delete any expired rows. */
 export async function purgeExpiredSessions() {
+  ensureReady();
   db.delete(sessions).where(lt(sessions.expires_at, new Date())).run();
 }
 

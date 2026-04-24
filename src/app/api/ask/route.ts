@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
 
     const history = (recentMessages || [])
       .reverse()
-      .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+      .map((m: { role: string; content: string }) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
 
     history.push({ role: 'user', content: question });
 

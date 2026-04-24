@@ -3,12 +3,12 @@
 
 import { generateCompletionWithHistory } from './client';
 import { NLQ_SYSTEM_PROMPT, buildAcademicContext } from './prompts';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { ShimClient } from '@/lib/supabase/shim';
 
 export async function handleNaturalLanguageQuery(
   userId: string,
   question: string,
-  supabase: SupabaseClient
+  supabase: ShimClient
 ): Promise<string> {
   // Gather full academic context
   const [coursesRes, assignmentsRes, announcementsRes] = await Promise.all([
@@ -52,7 +52,7 @@ export async function handleNaturalLanguageQuery(
 
   const history = (recentMessages || [])
     .reverse()
-    .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+    .map((m: { role: string; content: string }) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
 
   // Add current question
   history.push({ role: 'user', content: question });

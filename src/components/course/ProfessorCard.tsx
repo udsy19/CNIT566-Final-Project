@@ -6,7 +6,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiFetch } from '@/lib/api';
-import { createClient } from '@/lib/supabase/client';
 
 function deriveName(user: { email?: string; user_metadata?: { full_name?: string; name?: string } } | null): string {
   if (!user) return '';
@@ -60,15 +59,14 @@ export default function ProfessorCard({ courseId, courseName }: ProfessorCardPro
 
   const storageKey = `beacon-prof-${courseId}`;
 
-  // Fetch user's name from Supabase auth
+  // Fetch user's name from the local session
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      if (data?.user) {
-        const name = deriveName(data.user as { email?: string; user_metadata?: { full_name?: string; name?: string } });
-        setUserName(name);
-      }
-    });
+    apiFetch('/api/user')
+      .then((res) => (res.ok ? res.json() : { data: null }))
+      .then(({ data }) => {
+        if (data) setUserName(deriveName(data));
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {

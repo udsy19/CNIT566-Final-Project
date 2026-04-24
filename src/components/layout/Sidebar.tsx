@@ -8,7 +8,6 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { LayoutDashboard, Calendar, MessageSquare, Settings, LogOut, BookOpen, Menu, X, Sun, Moon, Monitor } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { createClient } from '@/lib/supabase/client';
 import { apiFetch } from '@/lib/api';
 import { getShortName } from '@/lib/utils/courseNames';
 import type { Course } from '@/types';
@@ -36,10 +35,12 @@ export default function Sidebar() {
       .then(({ data }) => setCourses(data || []))
       .catch(() => {});
 
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user?.email) setUserEmail(user.email);
-    });
+    apiFetch('/api/user')
+      .then((res) => (res.ok ? res.json() : { data: null }))
+      .then(({ data }) => {
+        if (data?.email) setUserEmail(data.email);
+      })
+      .catch(() => {});
 
     const saved = localStorage.getItem('beacon-theme') as Theme | null;
     if (saved) {
@@ -81,8 +82,7 @@ export default function Sidebar() {
   const ThemeIcon = themeIcon;
 
   const handleSignOut = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    await fetch('/api/auth/signout', { method: 'POST', credentials: 'include' });
     router.push('/');
   };
 

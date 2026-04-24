@@ -1,12 +1,12 @@
 // Beacon · CNIT 566 Final Project
 // Author: Udaya Tejas
 
-import { SupabaseClient } from '@supabase/supabase-js';
+import type { ShimClient } from '@/lib/supabase/shim';
 import { BrightspaceClient } from './client';
 import { getValidToken } from './auth';
 import { stripHtml } from '@/lib/utils/formatting';
 
-export async function runFullSync(userId: string, supabase: SupabaseClient) {
+export async function runFullSync(userId: string, supabase: ShimClient) {
   try {
     // Update status to syncing
     await supabase
@@ -117,7 +117,7 @@ export async function runFullSync(userId: string, supabase: SupabaseClient) {
   }
 }
 
-async function updateProgress(supabase: SupabaseClient, userId: string, step: string) {
+async function updateProgress(supabase: ShimClient, userId: string, step: string) {
   await supabase
     .from('users')
     .update({
@@ -128,7 +128,7 @@ async function updateProgress(supabase: SupabaseClient, userId: string, step: st
 
 async function syncAssignments(
   client: BrightspaceClient,
-  supabase: SupabaseClient,
+  supabase: ShimClient,
   userId: string,
   courseId: string,
   orgUnitId: number
@@ -178,7 +178,7 @@ async function syncAssignments(
 
 async function syncContent(
   client: BrightspaceClient,
-  supabase: SupabaseClient,
+  supabase: ShimClient,
   userId: string,
   courseId: string,
   orgUnitId: number
@@ -237,7 +237,7 @@ async function syncContent(
 
 async function syncGrades(
   client: BrightspaceClient,
-  supabase: SupabaseClient,
+  supabase: ShimClient,
   userId: string,
   courseId: string,
   orgUnitId: number
@@ -285,7 +285,7 @@ async function syncGrades(
 
 async function syncAnnouncements(
   client: BrightspaceClient,
-  supabase: SupabaseClient,
+  supabase: ShimClient,
   userId: string,
   courseId: string,
   orgUnitId: number
@@ -312,7 +312,7 @@ async function syncAnnouncements(
   }
 }
 
-export async function runIncrementalSync(userId: string, supabase: SupabaseClient) {
+export async function runIncrementalSync(userId: string, supabase: ShimClient) {
   try {
     await supabase
       .from('users')

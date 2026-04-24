@@ -17,7 +17,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
   const adminClient = createAdminClient();
   const [courseRes, assignmentsRes, modulesRes, topicsRes, announcementsRes] = await Promise.all([
     adminClient.from('courses').select('*').eq('id', courseId).eq('user_id', user.id).single(),
-    adminClient.from('assignments').select('*').eq('course_id', courseId).eq('user_id', user.id).order('due_date', { ascending: false, nullsFirst: false }),
+    adminClient.from('assignments').select('*').eq('course_id', courseId).eq('user_id', user.id).order('due_date', { ascending: false }),
     adminClient.from('content_modules').select('*').eq('course_id', courseId).eq('user_id', user.id).order('sort_order'),
     adminClient.from('content_topics').select('*').eq('course_id', courseId).eq('user_id', user.id).order('sort_order'),
     adminClient.from('announcements').select('*').eq('course_id', courseId).eq('user_id', user.id).order('created_date', { ascending: false }),

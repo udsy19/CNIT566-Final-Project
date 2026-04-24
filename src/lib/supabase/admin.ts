@@ -1,17 +1,12 @@
 // Beacon · CNIT 566 Final Project
 // Author: Udaya Tejas
 
-import { createClient } from '@supabase/supabase-js';
+// The "admin" client historically used Supabase's service-role key to bypass
+// RLS for background jobs and sync work. In the local app there is no RLS —
+// the shim simply queries SQLite directly.
 
-export function createAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
+import { createShimClient, type ShimClient } from './shim';
+
+export function createAdminClient(): ShimClient {
+  return createShimClient();
 }

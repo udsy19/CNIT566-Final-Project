@@ -1,11 +1,13 @@
 // Beacon · CNIT 566 Final Project
 // Author: Udaya Tejas
 
-import { createBrowserClient } from '@supabase/ssr';
+// In the local-app build, the "browser-side Supabase client" is also the
+// local shim. Client components call .auth.getSession() to satisfy API calls;
+// because the local app uses cookie-based sessions, the shim returns a
+// synthetic session so existing code continues to work.
 
-export function createClient() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+import { createShimClient, type ShimClient } from './shim';
+
+export function createClient(): ShimClient {
+  return createShimClient();
 }

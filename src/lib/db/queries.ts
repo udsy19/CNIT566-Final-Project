@@ -5,7 +5,7 @@
 // touching Drizzle directly — keeps route handlers short and consistent.
 
 import { eq, and, or, asc, desc, gte, lte, isNull, inArray, sql } from 'drizzle-orm';
-import { db } from './client';
+import { db, ensureReady } from './client';
 import {
   users,
   courses,
@@ -21,12 +21,15 @@ import type { NewUser, NewCourse, NewAssignment, NewAnnouncement } from './schem
 // ─── Users ───
 export const Users = {
   findByEmail(email: string) {
+    ensureReady();
     return db.select().from(users).where(eq(users.email, email.toLowerCase())).get();
   },
   findById(id: string) {
+    ensureReady();
     return db.select().from(users).where(eq(users.id, id)).get();
   },
   create(row: NewUser) {
+    ensureReady();
     db.insert(users).values(row).run();
     return this.findById(row.id)!;
   },
