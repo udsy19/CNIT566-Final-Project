@@ -211,10 +211,10 @@ In-memory per-user, per-endpoint rate limiting (`src/lib/rateLimit.ts`) prevents
 
 ## Presentation
 
-A self-contained slide deck lives at `/presentation` and mirrors the project's design system. Pre-generated exports sit in `src/app/presentation/`:
+A self-contained slide deck lives at `/presentation` and mirrors the project's design system. Pre-generated exports sit in `presentation slides/` at the project root:
 
-- `beacon-presentation.pdf`
-- `beacon-presentation.pptx`
+- `presentation slides/beacon-presentation.pdf`
+- `presentation slides/beacon-presentation.pptx`
 
 To regenerate them after edits to the slide component:
 
