@@ -22,11 +22,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Merge auth email if users table row doesn't have it
-  const userData = data || { id: user.id, email: user.email };
-  if (data && !data.email) {
-    userData.email = user.email;
-  }
-
-  return NextResponse.json({ data: userData });
+  const row = data || { id: user.id, email: user.email };
+  // Never ship the password hash out of the server.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { password_hash, ...safe } = row as Record<string, unknown>;
+  return NextResponse.json({ data: safe });
 }
