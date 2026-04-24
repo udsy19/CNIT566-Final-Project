@@ -23,7 +23,7 @@ function generateSessionId(): string {
 export async function createSession(userId: string): Promise<{ id: string; expiresAt: Date }> {
   const id = generateSessionId();
   const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
-  db.insert(sessions).values({ id, userId, expiresAt }).run();
+  db.insert(sessions).values({ id, user_id: userId, expires_at: expiresAt }).run();
   return { id, expiresAt };
 }
 
@@ -69,23 +69,23 @@ export async function validateSession(
       user: users,
     })
     .from(sessions)
-    .innerJoin(users, eq(sessions.userId, users.id))
+    .innerJoin(users, eq(sessions.user_id, users.id))
     .where(eq(sessions.id, sessionId))
     .get();
 
   if (!row) return null;
 
   const now = Date.now();
-  if (row.session.expiresAt.getTime() <= now) {
+  if (row.session.expires_at.getTime() <= now) {
     db.delete(sessions).where(eq(sessions.id, sessionId)).run();
     return null;
   }
 
   // Sliding expiry — refresh when within renew threshold.
-  if (row.session.expiresAt.getTime() - now < SESSION_RENEW_THRESHOLD_MS) {
+  if (row.session.expires_at.getTime() - now < SESSION_RENEW_THRESHOLD_MS) {
     const newExpiry = new Date(now + SESSION_DURATION_MS);
-    db.update(sessions).set({ expiresAt: newExpiry }).where(eq(sessions.id, sessionId)).run();
-    row.session.expiresAt = newExpiry;
+    db.update(sessions).set({ expires_at: newExpiry }).where(eq(sessions.id, sessionId)).run();
+    row.session.expires_at = newExpiry;
   }
 
   return { user: row.user, sessionId: row.session.id };
@@ -96,12 +96,12 @@ export async function invalidateSession(sessionId: string) {
 }
 
 export async function invalidateAllUserSessions(userId: string) {
-  db.delete(sessions).where(eq(sessions.userId, userId)).run();
+  db.delete(sessions).where(eq(sessions.user_id, userId)).run();
 }
 
 /** Opportunistic cleanup — delete any expired rows. */
 export async function purgeExpiredSessions() {
-  db.delete(sessions).where(lt(sessions.expiresAt, new Date())).run();
+  db.delete(sessions).where(lt(sessions.expires_at, new Date())).run();
 }
 
 /** Convenience: the default server-side gate for API routes and RSCs. */

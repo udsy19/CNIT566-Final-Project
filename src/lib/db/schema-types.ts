@@ -1,8 +1,7 @@
 // Beacon · CNIT 566 Final Project
 // Author: Udaya Tejas
 
-// Inferred row types from the Drizzle schema. Use these instead of the
-// legacy /src/types/index.ts shapes (which mirror the old Supabase output).
+// Inferred row types from the Drizzle schema.
 
 import type { InferSelectModel, InferInsertModel } from 'drizzle-orm';
 import * as s from './schema';
@@ -18,11 +17,11 @@ export type NewCourse = InferInsertModel<typeof s.courses>;
 export type Assignment = InferSelectModel<typeof s.assignments>;
 export type NewAssignment = InferInsertModel<typeof s.assignments>;
 
-export type ContentModule = InferSelectModel<typeof s.contentModules>;
-export type NewContentModule = InferInsertModel<typeof s.contentModules>;
+export type ContentModule = InferSelectModel<typeof s.content_modules>;
+export type NewContentModule = InferInsertModel<typeof s.content_modules>;
 
-export type ContentTopic = InferSelectModel<typeof s.contentTopics>;
-export type NewContentTopic = InferInsertModel<typeof s.contentTopics>;
+export type ContentTopic = InferSelectModel<typeof s.content_topics>;
+export type NewContentTopic = InferInsertModel<typeof s.content_topics>;
 
 export type Announcement = InferSelectModel<typeof s.announcements>;
 export type NewAnnouncement = InferInsertModel<typeof s.announcements>;
@@ -30,5 +29,5 @@ export type NewAnnouncement = InferInsertModel<typeof s.announcements>;
 export type Briefing = InferSelectModel<typeof s.briefings>;
 export type NewBriefing = InferInsertModel<typeof s.briefings>;
 
-export type ChatMessage = InferSelectModel<typeof s.chatMessages>;
-export type NewChatMessage = InferInsertModel<typeof s.chatMessages>;
+export type ChatMessage = InferSelectModel<typeof s.chat_messages>;
+export type NewChatMessage = InferInsertModel<typeof s.chat_messages>;
