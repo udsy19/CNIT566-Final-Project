@@ -1,3 +1,6 @@
+// Beacon · CNIT 566 Final Project
+// Author: Udaya Tejas
+
 // Database row types
 export interface User {
   id: string;

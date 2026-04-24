@@ -1,3 +1,6 @@
+// Beacon · CNIT 566 Final Project
+// Author: Udaya Tejas
+
 /**
  * In-memory rate limiter for AI endpoints.
  * Limits requests per user per time window.

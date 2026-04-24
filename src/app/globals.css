@@ -1,3 +1,8 @@
+/*
+ * Beacon · CNIT 566 Final Project
+ * Author: Udaya Tejas
+ */
+
 @import "tailwindcss";
 
 @theme {
@@ -192,7 +197,8 @@ body {
   padding: 0;
 }
 .chat-markdown table {
-  width: 100%;
+  width: auto;
+  max-width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   margin: 0.75rem 0;
@@ -238,4 +244,34 @@ body {
   color: var(--foreground);
   text-decoration: underline;
   text-underline-offset: 2px;
+  word-break: break-all;
+}
+
+/* Mobile table wrapper handled by the div wrapper in ChatMarkdown.tsx */
+
+/* Word break for long content */
+.chat-markdown {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* Hide scrollbar utility */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* iOS input zoom prevention — already using text-base on mobile inputs */
+@supports (-webkit-touch-callout: none) {
+  input, textarea, select {
+    font-size: 16px;
+  }
+  @media (min-width: 768px) {
+    input, textarea, select {
+      font-size: inherit;
+    }
+  }
 }

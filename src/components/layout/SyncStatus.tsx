@@ -1,3 +1,6 @@
+// Beacon · CNIT 566 Final Project
+// Author: Udaya Tejas
+
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,7 +20,7 @@ export default function SyncStatus({ status, progress }: SyncStatusProps) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 20 }}
-        className="fixed bottom-6 right-6 bg-background border border-border rounded-2xl p-4 shadow-lg max-w-sm z-50"
+        className="fixed bottom-20 md:bottom-6 right-4 md:right-6 left-4 md:left-auto bg-background border border-border rounded-2xl p-4 shadow-lg max-w-sm z-[55]"
       >
         <div className="flex items-center gap-3">
           {status === 'syncing' && (

@@ -3,7 +3,7 @@
 
 import Sidebar from '@/components/layout/Sidebar';
 
-export default function SettingsLayout({
+export default function CalendarLayout({
   children,
 }: {
   children: React.ReactNode;

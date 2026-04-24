@@ -1,3 +1,6 @@
+// Beacon · CNIT 566 Final Project
+// Author: Udaya Tejas
+
 import { createBrowserClient } from '@supabase/ssr';
 
 export function createClient() {

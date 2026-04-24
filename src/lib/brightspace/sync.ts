@@ -1,3 +1,6 @@
+// Beacon · CNIT 566 Final Project
+// Author: Udaya Tejas
+
 import { SupabaseClient } from '@supabase/supabase-js';
 import { BrightspaceClient } from './client';
 import { getValidToken } from './auth';

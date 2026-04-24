@@ -1,22 +1,16 @@
-import OpenAI from 'openai';
+// Beacon · CNIT 566 Final Project
+// Author: Udaya Tejas
+
+import Anthropic from '@anthropic-ai/sdk';
 
 function getClient() {
-  return new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-    baseURL: process.env.OPENAI_BASE_URL || 'https://genai.rcac.purdue.edu/api',
+  return new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
   });
 }
 
 function getModel() {
-  return process.env.OPENAI_MODEL || 'gpt-oss:120b';
-}
-
-function extractContent(message: OpenAI.Chat.Completions.ChatCompletionMessage): string {
-  if (message.content) return message.content;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const msg = message as any;
-  if (msg.reasoning_content) return msg.reasoning_content;
-  return '';
+  return process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001';
 }
 
 export async function generateCompletion(
@@ -24,17 +18,16 @@ export async function generateCompletion(
   userMessage: string,
   options?: { maxTokens?: number; temperature?: number }
 ): Promise<string> {
-  const response = await getClient().chat.completions.create({
+  const response = await getClient().messages.create({
     model: getModel(),
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userMessage },
-    ],
     max_tokens: options?.maxTokens || 2000,
-    temperature: options?.temperature || 0.7,
+    temperature: options?.temperature ?? 0.7,
+    system: systemPrompt,
+    messages: [{ role: 'user', content: userMessage }],
   });
 
-  return extractContent(response.choices[0]?.message);
+  const block = response.content[0];
+  return block?.type === 'text' ? block.text : '';
 }
 
 export async function generateCompletionWithHistory(
@@ -42,17 +35,16 @@ export async function generateCompletionWithHistory(
   messages: { role: 'user' | 'assistant'; content: string }[],
   options?: { maxTokens?: number; temperature?: number }
 ): Promise<string> {
-  const response = await getClient().chat.completions.create({
+  const response = await getClient().messages.create({
     model: getModel(),
-    messages: [
-      { role: 'system', content: systemPrompt },
-      ...messages,
-    ],
     max_tokens: options?.maxTokens || 2000,
-    temperature: options?.temperature || 0.7,
+    temperature: options?.temperature ?? 0.7,
+    system: systemPrompt,
+    messages,
   });
 
-  return extractContent(response.choices[0]?.message);
+  const block = response.content[0];
+  return block?.type === 'text' ? block.text : '';
 }
 
 export async function* generateCompletionStream(
@@ -60,24 +52,18 @@ export async function* generateCompletionStream(
   userMessage: string,
   options?: { maxTokens?: number; temperature?: number }
 ): AsyncGenerator<string> {
-  const stream = await getClient().chat.completions.create({
+  const stream = await getClient().messages.stream({
     model: getModel(),
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userMessage },
-    ],
     max_tokens: options?.maxTokens || 2000,
-    temperature: options?.temperature || 0.7,
-    stream: true,
+    temperature: options?.temperature ?? 0.7,
+    system: systemPrompt,
+    messages: [{ role: 'user', content: userMessage }],
   });
 
-  for await (const chunk of stream) {
-    const delta = chunk.choices[0]?.delta;
-    if (!delta) continue;
-    // Only yield content tokens, skip reasoning_content
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const content = (delta as any).content;
-    if (content) yield content;
+  for await (const event of stream) {
+    if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+      yield event.delta.text;
+    }
   }
 }
 
@@ -86,23 +72,18 @@ export async function* generateCompletionWithHistoryStream(
   messages: { role: 'user' | 'assistant'; content: string }[],
   options?: { maxTokens?: number; temperature?: number }
 ): AsyncGenerator<string> {
-  const stream = await getClient().chat.completions.create({
+  const stream = await getClient().messages.stream({
     model: getModel(),
-    messages: [
-      { role: 'system', content: systemPrompt },
-      ...messages,
-    ],
     max_tokens: options?.maxTokens || 2000,
-    temperature: options?.temperature || 0.7,
-    stream: true,
+    temperature: options?.temperature ?? 0.7,
+    system: systemPrompt,
+    messages,
   });
 
-  for await (const chunk of stream) {
-    const delta = chunk.choices[0]?.delta;
-    if (!delta) continue;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const content = (delta as any).content;
-    if (content) yield content;
+  for await (const event of stream) {
+    if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+      yield event.delta.text;
+    }
   }
 }
 

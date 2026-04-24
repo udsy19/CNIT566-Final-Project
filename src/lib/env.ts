@@ -1,3 +1,6 @@
+// Beacon · CNIT 566 Final Project
+// Author: Udaya Tejas
+
 import { z } from 'zod/v4';
 
 const envSchema = z.object({

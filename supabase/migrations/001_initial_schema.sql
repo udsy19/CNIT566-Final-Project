@@ -1,3 +1,6 @@
+-- Beacon · CNIT 566 Final Project
+-- Author: Udaya Tejas
+
 -- ============================================================================
 -- Beacon: Initial Database Schema
 -- AI-Powered Academic Dashboard with Brightspace LMS Integration

@@ -1,3 +1,6 @@
+// Beacon · CNIT 566 Final Project
+// Author: Udaya Tejas
+
 'use client';
 
 import { useState } from 'react';
@@ -69,7 +72,7 @@ export default function ContentTab({ modules, topics }: ContentTabProps) {
   };
 
   return (
-    <div className="p-6 rounded-2xl border border-border bg-background">
+    <div className="p-4 md:p-6 rounded-2xl border border-border bg-background">
       <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-4">
         Content Modules ({modules.length})
       </p>
@@ -144,7 +147,7 @@ export default function ContentTab({ modules, topics }: ContentTabProps) {
                                       href={topic.url}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/[0.03] transition-all"
+                                      className="flex items-center gap-2.5 px-2.5 py-2.5 md:py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/[0.03] active:bg-foreground/[0.05] transition-all"
                                     >
                                       {icon}
                                       <span className="truncate">{topic.title}</span>
@@ -153,7 +156,7 @@ export default function ContentTab({ modules, topics }: ContentTabProps) {
                                       </svg>
                                     </a>
                                   ) : (
-                                    <div className="flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground">
+                                    <div className="flex items-center gap-2.5 px-2.5 py-2.5 md:py-2 text-sm text-muted-foreground">
                                       {icon}
                                       <span className="truncate">{topic.title}</span>
                                     </div>

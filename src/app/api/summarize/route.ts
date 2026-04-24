@@ -1,3 +1,6 @@
+// Beacon · CNIT 566 Final Project
+// Author: Udaya Tejas
+
 import { NextResponse, type NextRequest } from 'next/server';
 import { getUserFromToken } from '@/lib/supabase/auth-helper';
 import { generateCompletionStream, streamToSSEResponse } from '@/lib/ai/client';

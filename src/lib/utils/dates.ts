@@ -1,3 +1,6 @@
+// Beacon · CNIT 566 Final Project
+// Author: Udaya Tejas
+
 import { format, formatDistanceToNow, isPast, isToday, isTomorrow, addDays, isWithinInterval } from 'date-fns';
 
 export function formatDueDate(dateString: string): string {

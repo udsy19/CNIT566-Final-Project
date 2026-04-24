@@ -1,3 +1,6 @@
+// Beacon · CNIT 566 Final Project
+// Author: Udaya Tejas
+
 export function formatGrade(points: number | null, denominator: number | null): string {
   if (points == null || denominator == null || denominator === 0) return 'N/A';
   const percentage = (points / denominator) * 100;

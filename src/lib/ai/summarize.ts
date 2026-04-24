@@ -1,3 +1,6 @@
+// Beacon · CNIT 566 Final Project
+// Author: Udaya Tejas
+
 import { generateCompletion } from './client';
 import { SUMMARIZE_SYSTEM_PROMPT } from './prompts';
 

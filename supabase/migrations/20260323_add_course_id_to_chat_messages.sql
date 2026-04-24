@@ -1,3 +1,6 @@
+-- Beacon · CNIT 566 Final Project
+-- Author: Udaya Tejas
+
 -- Add course_id column to chat_messages table to scope messages per course
 -- NULL course_id = global Ask Beacon chat
 -- Non-null course_id = course-specific AI chat

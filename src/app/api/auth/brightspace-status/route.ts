@@ -1,3 +1,6 @@
+// Beacon · CNIT 566 Final Project
+// Author: Udaya Tejas
+
 import { NextResponse } from 'next/server';
 import { getUserFromToken } from '@/lib/supabase/auth-helper';
 import { getAuthSession, cleanupAuthSession } from '@/lib/brightspace/playwright-auth';

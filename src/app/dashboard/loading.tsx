@@ -1,3 +1,6 @@
+// Beacon · CNIT 566 Final Project
+// Author: Udaya Tejas
+
 export default function DashboardLoading() {
   return (
     <div className="p-6 space-y-6 max-w-5xl mx-auto">

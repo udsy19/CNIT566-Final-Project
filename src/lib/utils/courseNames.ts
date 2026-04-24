@@ -1,3 +1,6 @@
+// Beacon · CNIT 566 Final Project
+// Author: Udaya Tejas
+
 /**
  * Extract a short course name from Brightspace's verbose format.
  * e.g. "Spring 2026 CNIT 56600-001 LEC" → "CNIT 56600"

@@ -1,3 +1,6 @@
+// Beacon · CNIT 566 Final Project
+// Author: Udaya Tejas
+
 'use client';
 
 import { useState } from 'react';
@@ -91,12 +94,12 @@ export default function CourseDetailContent({ course, assignments, modules, topi
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+      <div className="flex gap-1.5 md:gap-2 overflow-x-auto pb-1 scrollbar-none snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`relative px-5 py-2 rounded-full text-sm font-medium transition-colors shrink-0 ${
+            className={`relative px-4 md:px-5 py-2.5 md:py-2 rounded-full text-sm font-medium transition-colors shrink-0 snap-start ${
               activeTab === tab.key
                 ? 'text-background'
                 : 'text-muted-foreground hover:text-foreground border border-border hover:border-foreground/20'
@@ -127,7 +130,7 @@ export default function CourseDetailContent({ course, assignments, modules, topi
             <AssignmentsTab assignments={assignments} announcements={announcements} courseId={course.id} />
           )}
           {activeTab === 'grades' && (
-            <GradesTab assignments={assignments} courseGrade={course.current_grade} courseName={getShortName(course.name)} />
+            <GradesTab assignments={assignments} courseGrade={course.current_grade} courseName={getShortName(course.name)} courseId={course.id} />
           )}
           {activeTab === 'calendar' && (
             <CalendarTab assignments={assignments} />

@@ -1,3 +1,6 @@
+// Beacon · CNIT 566 Final Project
+// Author: Udaya Tejas
+
 import { create } from 'zustand';
 import type { Course, User } from '@/types';
 

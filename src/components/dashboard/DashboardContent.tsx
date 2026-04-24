@@ -1,3 +1,6 @@
+// Beacon · CNIT 566 Final Project
+// Author: Udaya Tejas
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -10,7 +13,8 @@ import Briefing from '@/components/dashboard/Briefing';
 import DeadlineList from '@/components/dashboard/DeadlineList';
 import GradeSnapshot from '@/components/dashboard/GradeSnapshot';
 import RecentUpdates from '@/components/dashboard/RecentUpdates';
-import type { User, Course, Assignment, Announcement, Briefing as BriefingType } from '@/types';
+import { checkDeadlineNotifications } from '@/lib/notifications';
+import type { User, Course, Assignment, Announcement } from '@/types';
 
 interface DashboardContentProps {
   user: User | null;
@@ -38,8 +42,6 @@ export default function DashboardContent({ user }: DashboardContentProps) {
   const [courses, setCourses] = useState<Course[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [briefing, setBriefing] = useState<BriefingType | null>(null);
-
   // Checklist state
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [newTask, setNewTask] = useState('');
@@ -116,6 +118,19 @@ export default function DashboardContent({ user }: DashboardContentProps) {
       return merged;
     });
   }, [assignments, checklistReady]);
+
+  // Check deadline notifications
+  useEffect(() => {
+    if (assignments.length === 0 || courses.length === 0) return;
+    const courseNames = new Map(courses.map(c => [c.id, getShortName(c.name)]));
+    checkDeadlineNotifications(assignments, courseNames);
+
+    // Re-check every 5 minutes
+    const interval = setInterval(() => {
+      checkDeadlineNotifications(assignments, courseNames);
+    }, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [assignments, courses]);
 
   // Persist checklist
   useEffect(() => {
@@ -256,28 +271,28 @@ export default function DashboardContent({ user }: DashboardContentProps) {
   return (
     <>
       <TopBar title="Dashboard" onSync={handleSync} syncing={syncing} />
-      <div className="p-6 space-y-6 max-w-5xl mx-auto">
+      <div className="p-4 md:p-6 space-y-4 md:space-y-6 max-w-5xl mx-auto">
         {/* Quick stats row */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="grid grid-cols-2 md:grid-cols-4 gap-4"
         >
-          <div className="p-4 rounded-2xl border border-border bg-background text-center">
-            <p className="text-2xl font-light tabular-nums">{courses.length}</p>
-            <p className="text-xs text-muted-foreground mt-1">Courses</p>
+          <div className="p-3 md:p-4 rounded-2xl border border-border bg-background text-center">
+            <p className="text-xl md:text-2xl font-light tabular-nums">{courses.length}</p>
+            <p className="text-[11px] md:text-xs text-muted-foreground mt-0.5">Courses</p>
           </div>
-          <div className="p-4 rounded-2xl border border-border bg-background text-center">
-            <p className="text-2xl font-light tabular-nums">{upcomingCount}</p>
-            <p className="text-xs text-muted-foreground mt-1">Upcoming</p>
+          <div className="p-3 md:p-4 rounded-2xl border border-border bg-background text-center">
+            <p className="text-xl md:text-2xl font-light tabular-nums">{upcomingCount}</p>
+            <p className="text-[11px] md:text-xs text-muted-foreground mt-0.5">Upcoming</p>
           </div>
-          <div className="p-4 rounded-2xl border border-border bg-background text-center">
-            <p className="text-2xl font-light tabular-nums">{avgGrade != null ? `${avgGrade.toFixed(1)}%` : '—'}</p>
-            <p className="text-xs text-muted-foreground mt-1">Avg Grade</p>
+          <div className="p-3 md:p-4 rounded-2xl border border-border bg-background text-center">
+            <p className="text-xl md:text-2xl font-light tabular-nums">{avgGrade != null ? `${avgGrade.toFixed(1)}%` : '—'}</p>
+            <p className="text-[11px] md:text-xs text-muted-foreground mt-0.5">Avg Grade</p>
           </div>
-          <div className="p-4 rounded-2xl border border-border bg-background text-center">
-            <p className="text-2xl font-light tabular-nums">{assignments.length}</p>
-            <p className="text-xs text-muted-foreground mt-1">Assignments</p>
+          <div className="p-3 md:p-4 rounded-2xl border border-border bg-background text-center">
+            <p className="text-xl md:text-2xl font-light tabular-nums">{assignments.length}</p>
+            <p className="text-[11px] md:text-xs text-muted-foreground mt-0.5">Assignments</p>
           </div>
         </motion.div>
 
@@ -323,7 +338,7 @@ export default function DashboardContent({ user }: DashboardContentProps) {
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 10, height: 0 }}
-                  className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${item.done ? 'opacity-50' : 'hover:bg-foreground/[0.03]'}`}
+                  className={`group flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-xl transition-colors ${item.done ? 'opacity-50' : 'hover:bg-foreground/[0.03] active:bg-foreground/[0.05]'}`}
                 >
                   <button
                     onClick={() => toggleItem(item.id)}
@@ -359,10 +374,10 @@ export default function DashboardContent({ user }: DashboardContentProps) {
                   </div>
                   {item.type === 'custom' && (
                     <button
-                      onClick={() => removeItem(item.id)}
-                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground transition-all"
+                      onClick={(e) => { e.stopPropagation(); removeItem(item.id); }}
+                      className="opacity-100 md:opacity-0 md:group-hover:opacity-100 p-1.5 -mr-1.5 text-muted-foreground hover:text-foreground active:text-foreground transition-all"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
@@ -401,7 +416,7 @@ export default function DashboardContent({ user }: DashboardContentProps) {
         </motion.div>
 
         {/* AI Briefing */}
-        <Briefing briefing={briefing} />
+        <Briefing courses={courses} assignments={assignments} />
 
         {/* Deadlines + Grades side by side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -431,7 +446,7 @@ export default function DashboardContent({ user }: DashboardContentProps) {
                   >
                     <Link
                       href={`/course/${course.id}`}
-                      className="block p-5 rounded-2xl border border-border bg-background hover:border-foreground/20 transition-colors"
+                      className="block p-4 md:p-5 rounded-2xl border border-border bg-background hover:border-foreground/20 active:bg-foreground/[0.02] transition-colors"
                     >
                       <p className="text-sm font-medium mb-3 truncate">{getShortName(course.name)}</p>
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">

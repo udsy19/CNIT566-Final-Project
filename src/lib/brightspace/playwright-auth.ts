@@ -1,3 +1,6 @@
+// Beacon · CNIT 566 Final Project
+// Author: Udaya Tejas
+
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
 
 const BRIGHTSPACE_URL = 'https://purdue.brightspace.com';

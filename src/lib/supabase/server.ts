@@ -1,3 +1,6 @@
+// Beacon · CNIT 566 Final Project
+// Author: Udaya Tejas
+
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 

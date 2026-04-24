@@ -1,3 +1,6 @@
+// Beacon · CNIT 566 Final Project
+// Author: Udaya Tejas
+
 'use client';
 
 import ReactMarkdown from 'react-markdown';
@@ -36,7 +39,7 @@ export default function ChatMarkdown({ content }: ChatMarkdownProps) {
         remarkPlugins={[remarkGfm]}
         components={{
           table: ({ children }) => (
-            <div className="overflow-x-auto my-3">
+            <div className="my-3 max-w-full overflow-x-auto">
               <table>{children}</table>
             </div>
           ),

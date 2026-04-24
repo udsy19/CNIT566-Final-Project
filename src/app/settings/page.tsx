@@ -1,8 +1,11 @@
+// Beacon · CNIT 566 Final Project
+// Author: Udaya Tejas
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sun, Moon, Monitor, Download, Trash2 } from 'lucide-react';
+import { Sun, Moon, Monitor, Download, Trash2, Bell, BellOff } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import TopBar from '@/components/layout/TopBar';
 import type { User } from '@/types';
@@ -14,6 +17,11 @@ export default function SettingsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState<Theme>('system');
+
+  // Notification settings
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
+  const [reminderHours, setReminderHours] = useState(2); // hours before deadline
 
   // Brightspace login state
   const [username, setUsername] = useState('');
@@ -27,6 +35,15 @@ export default function SettingsPage() {
     loadUser();
     const saved = localStorage.getItem('beacon-theme') as Theme | null;
     if (saved) setTheme(saved);
+
+    // Load notification settings
+    if (typeof Notification !== 'undefined') {
+      setNotificationPermission(Notification.permission);
+    }
+    const notifEnabled = localStorage.getItem('beacon-notifications') === 'true';
+    setNotificationsEnabled(notifEnabled);
+    const savedHours = localStorage.getItem('beacon-reminder-hours');
+    if (savedHours) setReminderHours(parseInt(savedHours));
   }, []);
 
   const pollStatus = useCallback(async () => {
@@ -180,12 +197,12 @@ export default function SettingsPage() {
   return (
     <>
       <TopBar title="Settings" />
-      <div className="p-6 max-w-2xl mx-auto space-y-6">
+      <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-4 md:space-y-6">
         {/* Brightspace connection */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-6 rounded-2xl border border-border bg-background"
+          className="p-4 md:p-6 rounded-2xl border border-border bg-background"
         >
           <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-4">Brightspace</p>
 
@@ -230,7 +247,7 @@ export default function SettingsPage() {
                         <motion.div
                           initial={{ scale: 0.8 }}
                           animate={{ scale: 1 }}
-                          className="text-6xl font-light tabular-nums tracking-widest mb-4"
+                          className="text-4xl md:text-6xl font-light tabular-nums tracking-widest mb-4"
                         >
                           {duoCode}
                         </motion.div>
@@ -278,7 +295,8 @@ export default function SettingsPage() {
                         onChange={(e) => setUsername(e.target.value)}
                         placeholder="pete123"
                         required
-                        className="w-full px-5 py-3 text-sm bg-background border border-border rounded-full outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/40"
+                        autoComplete="username"
+                        className="w-full px-5 py-3 text-base md:text-sm bg-background border border-border rounded-full outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/40"
                       />
                     </div>
                     <div>
@@ -289,7 +307,9 @@ export default function SettingsPage() {
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="BoilerUp!"
                         required
-                        className="w-full px-5 py-3 text-sm bg-background border border-border rounded-full outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/40"
+                        autoComplete="current-password"
+                        spellCheck="false"
+                        className="w-full px-5 py-3 text-base md:text-sm bg-background border border-border rounded-full outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/40"
                       />
                     </div>
                     {authError && (
@@ -315,7 +335,7 @@ export default function SettingsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="p-6 rounded-2xl border border-border bg-background"
+          className="p-4 md:p-6 rounded-2xl border border-border bg-background"
         >
           <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-4">Appearance</p>
           <div className="flex gap-2">
@@ -340,12 +360,101 @@ export default function SettingsPage() {
           </div>
         </motion.div>
 
+        {/* Notifications */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12 }}
+          className="p-4 md:p-6 rounded-2xl border border-border bg-background"
+        >
+          <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-4">Reminders</p>
+
+          <div className="space-y-4">
+            {/* Enable/disable toggle */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {notificationsEnabled ? (
+                  <Bell className="w-4 h-4 text-foreground" />
+                ) : (
+                  <BellOff className="w-4 h-4 text-muted-foreground" />
+                )}
+                <div>
+                  <p className="text-sm font-medium">Deadline reminders</p>
+                  <p className="text-xs text-muted-foreground">
+                    {notificationPermission === 'denied'
+                      ? 'Notifications blocked in browser settings'
+                      : 'Get notified before assignments are due'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={async () => {
+                  if (notificationPermission === 'denied') return;
+                  if (notificationPermission === 'default') {
+                    const perm = await Notification.requestPermission();
+                    setNotificationPermission(perm);
+                    if (perm !== 'granted') return;
+                  }
+                  const next = !notificationsEnabled;
+                  setNotificationsEnabled(next);
+                  localStorage.setItem('beacon-notifications', String(next));
+                  if (next) {
+                    new Notification('Beacon reminders enabled', {
+                      body: `You'll get notified ${reminderHours}h before deadlines.`,
+                      icon: '/favicon.ico',
+                    });
+                  }
+                }}
+                disabled={notificationPermission === 'denied'}
+                className={`relative w-11 h-6 rounded-full transition-colors ${
+                  notificationsEnabled ? 'bg-foreground' : 'bg-foreground/20'
+                } ${notificationPermission === 'denied' ? 'opacity-40 cursor-not-allowed' : ''}`}
+              >
+                <motion.div
+                  className="absolute top-0.5 w-5 h-5 rounded-full bg-background shadow-sm"
+                  animate={{ left: notificationsEnabled ? '22px' : '2px' }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                />
+              </button>
+            </div>
+
+            {/* Reminder frequency */}
+            {notificationsEnabled && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="overflow-hidden"
+              >
+                <p className="text-xs text-muted-foreground mb-2">Remind me before deadline</p>
+                <div className="flex gap-1.5 flex-wrap">
+                  {[1, 2, 4, 8, 24].map(h => (
+                    <button
+                      key={h}
+                      onClick={() => {
+                        setReminderHours(h);
+                        localStorage.setItem('beacon-reminder-hours', String(h));
+                      }}
+                      className={`px-3 py-2 md:py-1.5 rounded-full text-xs font-medium transition-all ${
+                        reminderHours === h
+                          ? 'bg-foreground text-background'
+                          : 'border border-border text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {h}h before
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </div>
+        </motion.div>
+
         {/* Account */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="p-6 rounded-2xl border border-border bg-background"
+          className="p-4 md:p-6 rounded-2xl border border-border bg-background"
         >
           <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-4">Account</p>
           <p className="text-sm">
@@ -359,7 +468,7 @@ export default function SettingsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="p-6 rounded-2xl border border-border bg-background"
+          className="p-4 md:p-6 rounded-2xl border border-border bg-background"
         >
           <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-4">Data</p>
           <div className="space-y-3">

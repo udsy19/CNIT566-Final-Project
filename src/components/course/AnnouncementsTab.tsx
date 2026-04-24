@@ -1,3 +1,6 @@
+// Beacon · CNIT 566 Final Project
+// Author: Udaya Tejas
+
 'use client';
 
 import { useState } from 'react';
@@ -80,13 +83,13 @@ export default function AnnouncementsTab({ announcements }: AnnouncementsTabProp
             >
               <button
                 onClick={() => setExpandedId(expanded ? null : ann.id)}
-                className="w-full px-5 py-4 text-left hover:bg-foreground/[0.02] transition-colors"
+                className="w-full px-4 md:px-5 py-4 text-left hover:bg-foreground/[0.02] active:bg-foreground/[0.04] transition-colors"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium">{ann.title}</p>
                     {!expanded && previewText && (
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                      <p className="text-xs md:text-sm text-muted-foreground mt-1 line-clamp-2">
                         {previewText}{previewText.length >= 150 ? '...' : ''}
                       </p>
                     )}

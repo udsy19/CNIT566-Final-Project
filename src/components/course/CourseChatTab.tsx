@@ -1,3 +1,6 @@
+// Beacon · CNIT 566 Final Project
+// Author: Udaya Tejas
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -103,7 +106,7 @@ export default function CourseChatTab({ courseId, courseName }: CourseChatTabPro
   const shortName = getShortName(courseName);
 
   return (
-    <div className="rounded-2xl border border-border bg-background flex flex-col" style={{ minHeight: '400px', maxHeight: 'calc(100vh - 280px)' }}>
+    <div className="rounded-2xl border border-border bg-background flex flex-col" style={{ minHeight: '350px', maxHeight: 'calc(100dvh - 320px)' }}>
       {/* Chat messages */}
       <div className="flex-1 overflow-y-auto p-3 md:p-5 space-y-4">
         {messages.length === 0 && (
@@ -124,8 +127,7 @@ export default function CourseChatTab({ courseId, courseName }: CourseChatTabPro
                 <motion.button
                   key={s}
                   onClick={() => sendMessage(s)}
-                  className="px-4 py-2 rounded-full border border-border text-xs text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-all"
-                  whileHover={{ scale: 1.03 }}
+                  className="px-3.5 py-2.5 md:px-4 md:py-2 rounded-full border border-border text-xs text-muted-foreground hover:text-foreground hover:border-foreground/20 active:bg-muted/30 transition-all"
                   whileTap={{ scale: 0.97 }}
                 >
                   {s}
@@ -143,7 +145,7 @@ export default function CourseChatTab({ courseId, courseName }: CourseChatTabPro
               className={msg.role === 'user' ? 'flex justify-end' : ''}
             >
               {msg.role === 'user' ? (
-                <div className="max-w-[75%] rounded-2xl px-4 py-2.5 bg-foreground text-background">
+                <div className="max-w-[85%] md:max-w-[75%] rounded-2xl px-4 py-2.5 bg-foreground text-background break-words">
                   <p className="text-sm">{msg.content}</p>
                 </div>
               ) : (
@@ -178,24 +180,25 @@ export default function CourseChatTab({ courseId, courseName }: CourseChatTabPro
       </div>
 
       {/* Input */}
-      <form onSubmit={handleSubmit} className="p-4 border-t border-border/40">
-        <div className="flex gap-3">
+      <form onSubmit={handleSubmit} className="p-3 md:p-4 border-t border-border/40">
+        <div className="flex gap-2 md:gap-3">
           <input
             ref={inputRef}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={`Ask about ${shortName}...`}
-            className="flex-1 px-5 py-3 text-sm bg-background border border-border rounded-full outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/40"
+            autoComplete="off"
+            autoCorrect="off"
+            className="flex-1 px-4 md:px-5 py-3 text-base md:text-sm bg-background border border-border rounded-full outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/40"
           />
           <motion.button
             type="submit"
             disabled={!input.trim() || loading}
-            className="px-5 py-3 rounded-full bg-foreground text-background hover:opacity-90 disabled:opacity-30 transition-opacity"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            className="px-4 md:px-5 py-3 rounded-full bg-foreground text-background hover:opacity-90 active:opacity-80 disabled:opacity-30 transition-opacity shrink-0"
+            whileTap={{ scale: 0.95 }}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
           </motion.button>

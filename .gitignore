@@ -33,6 +33,12 @@ __pycache__/
 
 # IDE
 .idea/
+.vscode/
+
+# presentation build scaffolding (frames + export scripts — the PDF/PPTX stay tracked)
+src/app/presentation/_frames/
+src/app/presentation/_build-slides.mjs
+src/app/presentation/_build-exports.py
 
 # debug
 npm-debug.log*

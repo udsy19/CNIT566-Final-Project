@@ -1,3 +1,6 @@
+// Beacon · CNIT 566 Final Project
+// Author: Udaya Tejas
+
 import { createAdminClient } from '@/lib/supabase/admin';
 
 export function getBrightspaceAuthUrl(state: string): string {

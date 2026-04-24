@@ -1,3 +1,6 @@
+// Beacon · CNIT 566 Final Project
+// Author: Udaya Tejas
+
 export default function GlobalLoading() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">

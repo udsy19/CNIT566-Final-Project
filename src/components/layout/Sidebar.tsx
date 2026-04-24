@@ -1,9 +1,12 @@
+// Beacon · CNIT 566 Final Project
+// Author: Udaya Tejas
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, MessageSquare, Settings, LogOut, BookOpen, Menu, X, Sun, Moon, Monitor } from 'lucide-react';
+import { LayoutDashboard, Calendar, MessageSquare, Settings, LogOut, BookOpen, Menu, X, Sun, Moon, Monitor } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import { apiFetch } from '@/lib/api';
@@ -12,6 +15,7 @@ import type { Course } from '@/types';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/ask', label: 'Ask Beacon', icon: MessageSquare },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
@@ -32,13 +36,11 @@ export default function Sidebar() {
       .then(({ data }) => setCourses(data || []))
       .catch(() => {});
 
-    // Load user email
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user?.email) setUserEmail(user.email);
     });
 
-    // Load saved theme
     const saved = localStorage.getItem('beacon-theme') as Theme | null;
     if (saved) {
       setTheme(saved);
@@ -50,13 +52,20 @@ export default function Sidebar() {
     setMobileOpen(false);
   }, [pathname]);
 
+  // Lock body scroll when mobile drawer is open
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileOpen]);
+
   const applyTheme = (t: Theme) => {
     const root = document.documentElement;
     root.classList.remove('light', 'dark');
-    if (t === 'system') {
-      // Let prefers-color-scheme handle it
-      return;
-    }
+    if (t === 'system') return;
     root.classList.add(t);
   };
 
@@ -87,7 +96,7 @@ export default function Sidebar() {
         <Link href="/dashboard" className="text-lg font-mono font-medium hover:opacity-70 transition-opacity">
           [beacon]
         </Link>
-        <button onClick={() => setMobileOpen(false)} className="md:hidden p-1 text-muted-foreground">
+        <button onClick={() => setMobileOpen(false)} className="md:hidden p-2 -mr-2 text-muted-foreground active:bg-muted/50 rounded-xl">
           <X className="w-5 h-5" />
         </button>
       </div>
@@ -99,10 +108,10 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
+              className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm transition-colors ${
                 isActive
                   ? 'bg-foreground text-background font-medium'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 active:bg-muted'
               }`}
             >
               <item.icon className="w-4 h-4" />
@@ -123,10 +132,10 @@ export default function Sidebar() {
                 <Link
                   key={course.id}
                   href={`/course/${course.id}`}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
                     isActive
                       ? 'bg-foreground text-background font-medium'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 active:bg-muted'
                   }`}
                   title={course.name}
                 >
@@ -140,8 +149,7 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer: user + theme + sign out */}
-      <div className="p-4 border-t border-border/40 space-y-2">
-        {/* User profile */}
+      <div className="p-4 border-t border-border/40 space-y-1">
         {userEmail && (
           <div className="flex items-center gap-3 px-3 py-2">
             <div className="w-7 h-7 rounded-full bg-foreground/10 flex items-center justify-center text-xs font-medium shrink-0">
@@ -151,20 +159,18 @@ export default function Sidebar() {
           </div>
         )}
 
-        {/* Theme toggle */}
         <button
           onClick={cycleTheme}
-          className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors w-full"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 active:bg-muted transition-colors w-full"
           title={`Theme: ${theme}`}
         >
           <ThemeIcon className="w-4 h-4" />
           <span className="capitalize">{theme}</span>
         </button>
 
-        {/* Sign out */}
         <button
           onClick={handleSignOut}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors w-full"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 active:bg-muted transition-colors w-full"
         >
           <LogOut className="w-4 h-4" />
           Sign out
@@ -180,31 +186,31 @@ export default function Sidebar() {
         {sidebarContent}
       </aside>
 
-      {/* Mobile top bar */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-50 h-14 bg-background/80 backdrop-blur-sm border-b border-border/40 flex items-center justify-between px-4">
+      {/* Mobile top bar — with safe area padding */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/40 flex items-center justify-between px-4 h-14 pt-[env(safe-area-inset-top)]">
         <Link href="/dashboard" className="text-base font-mono font-medium">
           [beacon]
         </Link>
-        <button onClick={() => setMobileOpen(true)} className="p-2 text-muted-foreground hover:text-foreground">
+        <button onClick={() => setMobileOpen(true)} className="p-2.5 -mr-1 text-muted-foreground hover:text-foreground active:bg-muted/50 rounded-xl">
           <Menu className="w-5 h-5" />
         </button>
       </div>
 
-      {/* Mobile bottom tab bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm border-t border-border/40">
-        <div className="flex items-center justify-around py-2">
+      {/* Mobile bottom tab bar — with safe area */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-t border-border/40 pb-[env(safe-area-inset-bottom)]">
+        <div className="flex items-center justify-around">
           {navItems.map((item) => {
             const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href + '/'));
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex flex-col items-center gap-1 px-4 py-1 ${
-                  isActive ? 'text-foreground' : 'text-muted-foreground'
+                className={`flex flex-col items-center justify-center gap-0.5 min-w-[64px] min-h-[48px] py-2 ${
+                  isActive ? 'text-foreground' : 'text-muted-foreground active:text-foreground'
                 }`}
               >
                 <item.icon className="w-5 h-5" />
-                <span className="text-[10px]">{item.label}</span>
+                <span className="text-[11px]">{item.label}</span>
               </Link>
             );
           })}
@@ -227,7 +233,7 @@ export default function Sidebar() {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="md:hidden fixed left-0 top-0 bottom-0 z-[70] w-72 bg-background border-r border-border/40 flex flex-col"
+              className="md:hidden fixed left-0 top-0 bottom-0 z-[70] w-[80vw] max-w-[300px] bg-background border-r border-border/40 flex flex-col pt-[env(safe-area-inset-top)]"
             >
               {sidebarContent}
             </motion.aside>
