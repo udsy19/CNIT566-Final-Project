@@ -50,6 +50,9 @@ yarn-error.log*
 .env*
 !.env.example
 
+# local sqlite database (created at runtime on each user's machine)
+/data/
+
 # vercel
 .vercel
 
