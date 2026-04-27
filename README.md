@@ -14,21 +14,37 @@ For the cloud version with live Brightspace sync, see the `main` branch.
 
 ## Quick start
 
+After cloning the repo, you have two equivalent ways to launch Beacon:
+
+### Option 1 — double-click launcher (recommended)
+
 ```bash
 git clone https://github.com/udsy19/CNIT566-Final-Project.git
 cd CNIT566-Final-Project
 git checkout localapp
+```
+
+Then **double-click**:
+
+- **macOS / Linux:** `start.command`
+- **Windows:** `start.bat`
+
+The launcher checks for Node.js, installs dependencies, sets up the SQLite database with demo data, builds the production bundle, and opens your browser to Beacon. First run takes ~2 minutes; every subsequent launch is instant.
+
+### Option 2 — terminal commands
+
+```bash
 npm install
 npm run db:seed     # creates demo@purdue.edu with realistic Purdue data
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) and sign in:
+### Sign in with the demo account
 
 - **Email:** `demo@purdue.edu`
 - **Password:** `purdue123`
 
-That's the whole setup. The dashboard, calendar, course detail tabs, and `/ask` chat all work immediately. AI surfaces show clearly-labelled demo responses until you install Ollama (next section).
+The dashboard, calendar, course detail tabs, and `/ask` chat all work immediately. AI surfaces show clearly-labelled demo responses until you install Ollama (next section).
 
 ## Optional: real AI via Ollama
 
