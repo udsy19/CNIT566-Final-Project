@@ -52,6 +52,17 @@ function resolveColumn(table: AnySQLiteTable, colName: string): AnyColumn {
   return col;
 }
 
+// ISO-8601 date strings come from old Supabase code paths (`.gte('end_date', new
+// Date().toISOString())`). Drizzle's timestamp_ms mode expects a Date — coerce.
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
+function coerceForColumn(col: AnyColumn, val: unknown): unknown {
+  if (typeof val !== 'string') return val;
+  const c = col as unknown as { dataType?: string; columnType?: string };
+  const isTimestamp = c.dataType === 'date' || c.columnType === 'SQLiteTimestamp';
+  if (isTimestamp && ISO_DATE_RE.test(val)) return new Date(val);
+  return val;
+}
+
 type Filter = SQL;
 
 type Ordering = { col: AnyColumn; ascending: boolean };
@@ -93,33 +104,45 @@ class QueryBuilder implements PromiseLike<PgResult<any>> {
   // a SQL parser to honor precisely; selecting * and letting the caller pick
   // fields is simpler and closer to how Drizzle is designed.
   select(_cols?: string, _opts?: { count?: string; head?: boolean }): this {
-    this.mode = 'select';
+    // If a write mode is already active (insert/update/upsert/delete), `.select()`
+    // means "return the affected rows" rather than starting a fresh select.
+    if (this.mode === 'select') {
+      this.mode = 'select';
+    } else {
+      this.returnAfterWrite = true;
+    }
     return this;
   }
 
   // ─── filters ───
   eq(col: string, val: unknown): this {
-    this.filters.push(eq(resolveColumn(this.table, col), val as never));
+    const c = resolveColumn(this.table, col);
+    this.filters.push(eq(c, coerceForColumn(c, val) as never));
     return this;
   }
   neq(col: string, val: unknown): this {
-    this.filters.push(ne(resolveColumn(this.table, col), val as never));
+    const c = resolveColumn(this.table, col);
+    this.filters.push(ne(c, coerceForColumn(c, val) as never));
     return this;
   }
   gt(col: string, val: unknown): this {
-    this.filters.push(gt(resolveColumn(this.table, col), val as never));
+    const c = resolveColumn(this.table, col);
+    this.filters.push(gt(c, coerceForColumn(c, val) as never));
     return this;
   }
   gte(col: string, val: unknown): this {
-    this.filters.push(gte(resolveColumn(this.table, col), val as never));
+    const c = resolveColumn(this.table, col);
+    this.filters.push(gte(c, coerceForColumn(c, val) as never));
     return this;
   }
   lt(col: string, val: unknown): this {
-    this.filters.push(lt(resolveColumn(this.table, col), val as never));
+    const c = resolveColumn(this.table, col);
+    this.filters.push(lt(c, coerceForColumn(c, val) as never));
     return this;
   }
   lte(col: string, val: unknown): this {
-    this.filters.push(lte(resolveColumn(this.table, col), val as never));
+    const c = resolveColumn(this.table, col);
+    this.filters.push(lte(c, coerceForColumn(c, val) as never));
     return this;
   }
   is(col: string, val: unknown): this {
@@ -206,7 +229,9 @@ class QueryBuilder implements PromiseLike<PgResult<any>> {
   }
   update(values: Record<string, unknown>): this {
     this.mode = 'update';
-    this.updateValues = { ...values, updated_at: new Date() };
+    const tableCols = getTableColumns(this.table) as Record<string, AnyColumn>;
+    this.updateValues =
+      'updated_at' in tableCols ? { ...values, updated_at: new Date() } : { ...values };
     return this;
   }
   upsert(
@@ -277,19 +302,19 @@ class QueryBuilder implements PromiseLike<PgResult<any>> {
       }
 
       if (this.mode === 'upsert') {
-        // Best-effort upsert. If onConflict is specified, use that; otherwise
-        // try the first unique constraint the caller intends (fallback: primary key).
+        // Best-effort upsert. If onConflict is specified, use that.
         const target = this.upsertConflict?.map((c) => resolveColumn(this.table, c)) ?? [];
+        const tableCols = getTableColumns(this.table) as Record<string, AnyColumn>;
         const setClause: Record<string, unknown> = {};
         for (const row of this.insertRows) {
           for (const [k, v] of Object.entries(row)) {
-            // Don't overwrite the conflict target columns or the primary key.
             if (target.some((t) => (t as unknown as { name: string }).name === k)) continue;
             if (k === 'id' || k === 'created_at') continue;
             setClause[k] = v;
           }
         }
-        setClause.updated_at = new Date();
+        // Bump updated_at only if the table has one.
+        if ('updated_at' in tableCols) setClause.updated_at = new Date();
 
         let q = db.insert(this.table).values(this.insertRows as never);
         if (target.length > 0) {
