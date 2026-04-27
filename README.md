@@ -1,239 +1,128 @@
-# Beacon
+# Beacon — Local App Edition
 
-**AI-powered academic dashboard for Purdue students.**
+**AI-powered academic dashboard for Purdue students. Runs entirely on your laptop.**
 
-> CNIT 566 — Final Project
+> CNIT 566 — Final Project · `localapp` branch
 > Author: **Udaya Tejas**
 > Purdue University · Spring 2026
 
-Beacon aggregates course data from Brightspace (D2L) — grades, assignments, content, and announcements — into a single dashboard, and layers AI on top to generate daily briefings, answer natural-language questions, and surface grade trends. The goal is to turn Brightspace from a system of record into a workspace.
+This is the **local-first build** of Beacon. No Supabase project, no Anthropic API key, no Vercel deploy. One `npm install`, one `npm run dev`, and the entire app runs against an embedded SQLite database with optional local AI through Ollama.
+
+For the cloud version with live Brightspace sync, see the `main` branch.
 
 ---
 
-## Table of contents
-
-- [Features](#features)
-- [Tech stack](#tech-stack)
-- [Architecture](#architecture)
-- [Database schema](#database-schema)
-- [Getting started](#getting-started)
-- [Project structure](#project-structure)
-- [Design system](#design-system)
-- [AI layer](#ai-layer)
-- [Security](#security)
-- [Presentation](#presentation)
-- [Fallback plans](#fallback-plans)
-- [Academic integrity](#academic-integrity)
-
----
-
-## Features
-
-- **Unified dashboard** — every course, grade, and upcoming deadline on one page.
-- **AI daily briefing** — a streaming summary of what is due, what is coming up, and what needs attention.
-- **Ask Beacon** — a natural-language chat interface that can answer questions over a student's real academic data, with separate global and per-course scopes.
-- **Unified calendar** — month and week views of assignments across every course, color-coded.
-- **Grade analytics** — weighted grade calculations and AI-generated insights that highlight weak spots.
-- **Content browser** — hierarchical view of Brightspace course modules and topics.
-- **Instructor card** — automatically extracts contact details and office hours from course syllabi via AI.
-- **Daily checklist** — auto-populated from upcoming assignments, with custom tasks and a daily reset.
-- **Mobile-ready** — responsive layout, PWA-friendly, dark-mode and light-mode support.
-
-## Tech stack
-
-| Layer            | Choice                                                    |
-| ---------------- | --------------------------------------------------------- |
-| Framework        | Next.js 16 (App Router) + React 19                        |
-| Language         | TypeScript (strict mode)                                  |
-| Styling          | Tailwind CSS v4 · Framer Motion · Lucide icons            |
-| Auth + Database  | Supabase (Postgres + Auth + Row-Level Security)           |
-| External data    | Brightspace Valence API (D2L)                             |
-| AI               | Streaming completions via Server-Sent Events              |
-| Browser control  | Playwright (for Brightspace DUO 2FA fallback)             |
-| State            | Zustand · React hooks                                     |
-| Build / deploy   | Vercel-ready                                              |
-
-## Architecture
-
-```
-Browser  ──▶  Next.js App Router
-                ├── Server components (SSR)
-                ├── Client components (interactive UI)
-                └── API routes (21 endpoints)
-                        │
-              ┌─────────┴─────────┐
-              ▼                   ▼
-       Supabase Postgres    AI provider (streaming)
-          (RLS on every row)
-              ▲
-              │ (background sync)
-              │
-       Brightspace Valence API
-              ▲
-              │ (auth fallback)
-              │
-         Playwright (DUO 2FA)
-```
-
-- **No separate backend.** Every server-side concern — auth, sync, AI, rate limiting — lives in Next.js API routes. One codebase, one deploy.
-- **Local-first reads.** The dashboard never queries Brightspace directly at runtime. A background sync job writes into Supabase, and the UI reads from there.
-- **Two-step auth.** Supabase Auth owns Beacon identity; Brightspace OAuth (or a Playwright-captured session) owns LMS data access.
-- **Streaming AI.** Async generators are wrapped into Server-Sent Events for token-by-token responses on the briefing, ask, and grade-insight endpoints.
-
-## Database schema
-
-Eight tables, all with Row-Level Security scoped to `auth.uid()`:
-
-| Table             | Purpose                                                           |
-| ----------------- | ----------------------------------------------------------------- |
-| `users`           | Extends Supabase auth with Brightspace tokens + sync state        |
-| `courses`         | Synced course enrollments                                         |
-| `assignments`     | Dropbox folders + quizzes with due dates and grades               |
-| `content_modules` | Hierarchical course modules                                       |
-| `content_topics`  | Individual content items within modules                           |
-| `announcements`   | Course news items                                                 |
-| `briefings`       | Cached AI daily briefings                                         |
-| `chat_messages`   | Chat history — nullable `course_id` for global vs. per-course scope |
-
-Migrations live in `supabase/migrations/`.
-
-## Getting started
-
-### Prerequisites
-
-- Node.js ≥ 20
-- Python ≥ 3.10 (only needed to rebuild the presentation PDF/PPTX)
-- A Supabase project
-- An AI provider API key (Anthropic or OpenAI)
-- A Purdue Brightspace account (for live data)
-
-### Install
+## Quick start
 
 ```bash
-git clone <this-repo-url>
-cd CNIT566-Project
+git clone https://github.com/udsy19/CNIT566-Final-Project.git
+cd CNIT566-Final-Project
+git checkout localapp
 npm install
-npx playwright install chromium
-```
-
-### Configure
-
-Copy the environment template and fill it in:
-
-```bash
-cp .env.example .env.local
-```
-
-Run the database migrations:
-
-```bash
-npx supabase db push
-```
-
-### Run
-
-```bash
+npm run db:seed     # creates demo@purdue.edu with realistic Purdue data
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000), create an account, connect Brightspace from `/settings`, and wait for the first sync to complete.
+Open [http://localhost:3000](http://localhost:3000) and sign in:
 
-### Useful routes
+- **Email:** `demo@purdue.edu`
+- **Password:** `purdue123`
 
-| Route            | What it does                                |
-| ---------------- | ------------------------------------------- |
-| `/`              | Landing page + auth                         |
-| `/dashboard`     | Main dashboard                              |
-| `/course/[id]`   | Course detail (7 tabs)                      |
-| `/ask`           | Global AI chat                              |
-| `/calendar`      | Cross-course calendar                       |
-| `/settings`      | Theme, Brightspace auth, data export        |
-| `/presentation`  | In-app slide deck (CNIT 566 presentation)   |
+That's the whole setup. The dashboard, calendar, course detail tabs, and `/ask` chat all work immediately. AI surfaces show clearly-labelled demo responses until you install Ollama (next section).
+
+## Optional: real AI via Ollama
+
+The AI features (daily briefing, Ask Beacon, grade insights, instructor extraction) call a locally-running [Ollama](https://ollama.com) instance over its OpenAI-compatible HTTP endpoint. If Ollama isn't running, every AI surface falls back to demo responses so the UI keeps working.
+
+```bash
+brew install ollama       # or download from ollama.com
+ollama serve &            # start the local daemon
+ollama pull qwen2.5:7b    # ~4.7 GB; one-time download
+```
+
+Restart the dev server. The app detects Ollama on first request and starts streaming real responses.
+
+To use a different model, set `OLLAMA_MODEL=llama3.1:8b` (or any other Ollama model) in `.env.local`.
+
+## What's different from the `main` branch?
+
+| | `main` (cloud) | `localapp` (this branch) |
+|---|---|---|
+| Database | Supabase Postgres | Local SQLite via `better-sqlite3` |
+| Auth | Supabase Auth (email/Google) | Local session cookies + argon2id, Purdue email gate |
+| AI | Anthropic Claude API | Local Ollama (qwen2.5:7b default) with demo fallback |
+| Brightspace sync | Live OAuth + Playwright | Optional — seed script provides realistic demo data |
+| External services | Supabase, Anthropic, Vercel | None |
+| First-run setup | Configure 14 env vars + run migrations | Run two npm commands |
 
 ## Project structure
 
 ```
 src/
 ├── app/                 # Next.js App Router (pages + API routes)
-│   ├── api/             # 21 endpoints grouped by domain
-│   ├── dashboard/
-│   ├── course/[courseId]/
-│   ├── ask/
-│   ├── calendar/
-│   ├── settings/
-│   └── presentation/    # In-app slides + generated PDF/PPTX
-├── components/          # UI (dashboard, course, layout, ask, ui)
+│   ├── api/auth/        # signup, signin, signout (cookie-based)
+│   ├── api/...          # all original Beacon endpoints
+│   ├── dashboard/, course/, ask/, calendar/, settings/
+│   └── presentation/    # in-app slide deck
 ├── lib/
-│   ├── ai/              # Prompts, client, briefing, NLQ, summarize
-│   ├── brightspace/     # OAuth, client, sync, Playwright fallback
-│   ├── supabase/        # Client/server/admin wrappers + helpers
-│   └── utils/           # Dates, formatting, course names
-├── hooks/               # Custom React hooks
-├── stores/              # Zustand store
-└── types/               # Shared TypeScript types
-supabase/migrations/     # SQL migrations
+│   ├── db/              # Drizzle schema, client, migrate, queries
+│   │   ├── schema.ts          # 9 tables (8 app + sessions)
+│   │   ├── client.ts          # lazy SQLite connection + auto-migrate
+│   │   ├── queries.ts         # domain helpers (Users, Courses, ...)
+│   │   └── schema-types.ts    # Drizzle-inferred row types
+│   ├── auth/            # session.ts (cookie auth), password.ts (argon2id)
+│   ├── supabase/        # back-compat shim — same .from(...) API on Drizzle
+│   ├── ai/              # Ollama client + demo fallback + prompts
+│   └── brightspace/     # OAuth + Playwright (only used if you connect)
+scripts/
+└── seed.ts              # populates the demo Purdue student account
+drizzle/
+└── 0000_initial.sql     # generated migration SQL
 ```
 
-## Design system
+## Database
 
-Beacon uses a **monochrome-first** palette — pure oklch achromatic colors with zero chroma. The only chromatic hues are semantic: emerald for A-grades and success states, descending through amber, orange, and rose for grades B–D.
-
-- Headlines use `font-light` (weight 300). No bold headlines.
-- The brand mark is `[beacon]` in a monospace medium weight, always lowercase and bracketed.
-- Buttons are always pill-shaped (`rounded-full`).
-- Cards use `rounded-2xl` with a 1px border and no resting shadow.
-- Inputs use `rounded-full` with a soft focus ring.
-- Framer Motion drives entrance and hover animations only — there is no scroll re-animation.
-
-The full palette is declared in `src/app/globals.css` via CSS custom properties mapped into a Tailwind v4 `@theme` block.
-
-## AI layer
-
-The AI is configured in `src/lib/ai/` and exposes four helpers:
-
-- `generateCompletion` — one-shot completion.
-- `generateCompletionWithHistory` — conversation-aware completion.
-- `generateCompletionStream` — async-generator streaming.
-- `streamToSSEResponse` — wraps a generator into a Server-Sent Events HTTP response.
-
-Six tuned system prompts in `src/lib/ai/prompts.ts` drive the briefing, NLQ, course NLQ, assignment analysis, grade insight, and generic summarization flows. A `buildAcademicContext()` helper assembles the user's real academic data into structured markdown before prompting, so the model sees clean context instead of raw JSON.
-
-In-memory per-user, per-endpoint rate limiting (`src/lib/rateLimit.ts`) prevents abuse: briefings are capped at 10 requests per minute and chat at 20 per minute.
-
-## Security
-
-- **Row-Level Security** on every table — `USING (user_id = auth.uid())`. The database enforces isolation independently of the API layer.
-- **Session cookies server-side only.** Brightspace credentials never reach the browser.
-- **JWT-validated API routes.** Every `/api/*` handler verifies the Supabase session before reading data.
-- **Rate limits** on AI endpoints prevent cost blowouts.
-- **Environment-variable secrets.** `.env.local` is gitignored and never committed; `.env.example` ships with the repo for setup.
-- **24-hour session expiry** on Brightspace cookies — expired sessions force a clean re-authentication.
-
-## Presentation
-
-A self-contained slide deck lives at `/presentation` and mirrors the project's design system. Pre-generated exports sit in `presentation slides/` at the project root:
-
-- `presentation slides/beacon-presentation.pdf`
-- `presentation slides/beacon-presentation.pptx`
-
-To regenerate them after edits to the slide component:
+SQLite database file lives at `data/beacon.sqlite`. It's gitignored — every laptop builds its own. Migrations run automatically on first request. To reset the DB: `rm -rf data && npm run db:seed`.
 
 ```bash
-# With the dev server running
-node src/app/presentation/_build-slides.mjs
-python3 src/app/presentation/_build-exports.py
+# Useful database commands
+npm run db:migrate    # apply pending migrations (auto-runs on dev start)
+npm run db:seed       # populate the demo Purdue account
+npm run db:generate   # regenerate migrations after editing schema.ts
+npm run db:studio     # open Drizzle Studio (browser GUI for the DB)
 ```
 
-The build scripts and raw screenshot frames are gitignored — only the final PDF/PPTX are tracked.
+## Auth
 
-## Fallback plans
+The local-app build uses session-cookie auth backed by the SQLite `sessions` table. Passwords are hashed with **argon2id** via `@node-rs/argon2`. Sessions are httpOnly, sameSite=lax, with sliding 30-day expiry.
 
-If Brightspace API approval is delayed or unavailable, the architecture supports three fallback data sources without any changes to the UI or database:
+The signup endpoint enforces a `@purdue.edu` email gate — non-Purdue addresses get a 400 with a friendly message.
 
-- **A — Manual upload.** Students upload syllabus PDFs and grade CSVs.
-- **B — DOM scraper.** A Chrome extension reads the Brightspace DOM directly.
-- **C — Mock data.** The same schema populated with realistic sample rows for demo purposes.
+```
+POST /api/auth/signup    — create account + start session
+POST /api/auth/signin    — verify password + start session
+POST /api/auth/signout   — invalidate session + clear cookie
+GET  /api/user           — return the current user (sans password hash)
+```
+
+## Brightspace (optional)
+
+If you want to pull your real Purdue Brightspace data into the local DB, the OAuth + Playwright DUO flow from `main` still works on this branch — the sync writes into the same SQLite tables instead of Supabase. Connect from `/settings`. If you don't connect, the seeded demo data is what powers the dashboard.
+
+## AI architecture
+
+Six tuned system prompts in `src/lib/ai/prompts.ts` drive briefings, Ask Beacon (global + per-course), assignment analysis, grade insights, and generic summarization. The `buildAcademicContext()` helper assembles your real academic data into structured markdown before prompting, so the model sees clean context instead of raw rows.
+
+Streaming uses async generators wrapped into Server-Sent Events at `streamToSSEResponse()`. The same helper drives `/api/briefing`, `/api/ask`, `/api/ask/course`, and `/api/course/grade-insight`.
+
+In-memory rate limiting at `src/lib/rateLimit.ts` keeps demo abuse in check: briefings 10/min, chat 20/min.
+
+## Dev environment
+
+- Node.js ≥ 20
+- One-time: `npx playwright install chromium` (only needed if you plan to use Brightspace sync)
+- macOS / Linux / Windows all supported — `better-sqlite3` ships native binaries for each
 
 ## Academic integrity
 
-This project was developed as the final deliverable for **CNIT 566** at Purdue University by **Udaya Tejas**. All architectural decisions, source code, database schema, design system, and written materials are my own work. External libraries are credited through `package.json`; third-party services (Supabase, Brightspace, AI providers) are used only as documented API consumers.
+This project was developed as the final deliverable for **CNIT 566** at Purdue University by **Udaya Tejas**. All architectural decisions, source code, database schema, design system, and written materials are my own work. External libraries are credited through `package.json`; third-party services (Brightspace, Ollama) are used only as documented API consumers.
